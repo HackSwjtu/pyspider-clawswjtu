@@ -1,0 +1,12 @@
+{
+  "taskdb": "mysql+taskdb://root:password@ip:port/taskdb",
+  "projectdb": "mysql+projectdb://root:password@ip:port/projectdb",
+  "resultdb": "mysql+resultdb://root:password@ip:port/resultdb",
+  "message_queue": "redis://ip:port/db",
+  "webui": {
+    "username": "any",
+    "password": "any",
+    "need-auth": true,
+    "port": 5001
+  }
+}
