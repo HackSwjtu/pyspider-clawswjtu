@@ -1,11 +1,11 @@
 {
-  "taskdb": "mysql+taskdb://root:password@ip:port/taskdb",
-  "projectdb": "mysql+projectdb://root:password@ip:port/projectdb",
-  "resultdb": "mysql+resultdb://root:password@ip:port/resultdb",
-  "message_queue": "redis://ip:port/db",
+  "taskdb": "mysql+taskdb://root:labdata@127.0.0.1:3306/taskdb",
+  "projectdb": "mysql+projectdb://root:labdata@127.0.0.1:3306/projectdb",
+  "resultdb": "mysql+resultdb://root:labdata@127.0.0.1:3306/resultdb",
+  "message_queue": "redis://127.0.0.1:6379/db",
   "webui": {
-    "username": "any",
-    "password": "any",
+    "username": "hackswjtu",
+    "password": "swjtu",
     "need-auth": true,
     "port": 5001
   }
