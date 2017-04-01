@@ -14,6 +14,7 @@ conn = pymysql.connect(host='ip', user='root', passwd='password', db='db',
 cursor = conn.cursor()
 
 
+
 class Handler(BaseHandler):
     crawl_config = {
         'headers': {
@@ -33,7 +34,7 @@ class Handler(BaseHandler):
             CREATE TABLE IF NOT EXISTS Lecture(
               id INT PRIMARY KEY AUTO_INCREMENT,
               title VARCHAR(100),
-              time datetime,
+              lecturetime datetime,
               place VARCHAR(100),
               speaker VARCHAR(100),
               speakerbrif TEXT,
@@ -54,7 +55,7 @@ class Handler(BaseHandler):
         for each in response.doc('[cmsid="34403899"] a').items():
             self.crawl(each.attr.href, callback=self.swjtu_detail_page)
         currentpage = response.doc('div.page_blue span.current').text()
-        if int(currentpage) <= 7:
+        if not currentpage and int(currentpage) <= 7:
             for each in response.doc('.page_blue a').items():
                 if (each.text() == '>>'):
                     self.crawl(each.attr.href, callback=self.swjtu_page)
@@ -71,6 +72,7 @@ class Handler(BaseHandler):
                 self.crawl(lecture_page_link, callback=self.dean_page)
 
     def handleTime(self, text):
+        text = text.split('-')[0]
         timenum = re.sub("\D", "", text)
         time = datetime.strptime(timenum, '%Y%m%d%H%M')
         return time
@@ -156,7 +158,7 @@ class Handler(BaseHandler):
         detail = result['detail']
 
         self.cursor.execute(
-            'INSERT INTO Lecture(title, time, place, speaker, speakerbrif, detail) VALUES (%s, %s, %s, %s, %s, %s)',
+            'INSERT INTO Lecture(title, lecturetime, place, speaker, speakerbrif, detail) VALUES (%s, %s, %s, %s, %s, %s)',
             (title, time, place, speaker, speakerbrif, detail))
         self.conn.commit()
         print('insert success!')
