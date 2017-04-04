@@ -14,7 +14,7 @@ from lxml import etree
 from tidylib import tidy_document
 import urllib2, cookielib, re, jieba
 
-conn = pymysql.connect(host='ip', user='root', passwd='password', db='db', charset="utf8")
+conn = pymysql.connect(host='ip', user='root', passwd='pass', db='db', charset="utf8")
 cursor = conn.cursor()
 
 limdate = dt.datetime.now() + dt.timedelta(days=-60) # 日期下限
@@ -81,7 +81,7 @@ class Handler(BaseHandler):
 
     @every(minutes=3 * 60)
     def on_start(self):
-        self.crawl('http://dean.swjtu.edu.cn/servlet/NewsAction?Action=NewsMore',  callback=self.index_page, validate_cert=False, auto_recrawl=True)
+        self.crawl('http://dean.swjtu.edu.cn/servlet/NewsAction?Action=NewsMore',  callback=self.index_page, validate_cert=False, auto_recrawl=True, last_modified=False)
 
 
     '''
@@ -132,7 +132,7 @@ class Handler(BaseHandler):
                     break
                 if re.search('奖|绩|获|记|名单|课|结果|简报|中学生'.decode('utf8'), title) == None and title.find('赛'.decode('utf8')) != -1:
                     if self.iscompetition(title):
-                        self.crawl(url, callback=self.dean_competition_detail_page, save={'publishdate': publishdate})
+                        self.crawl(url, callback=self.dean_competition_detail_page, save={'publishdate': publishdate},last_modified=False)
 
         pagejs = response.doc('script')
         all_pages = re.findall('var allPage = "(.*?)"', pagejs.text(), re.S)[0]
@@ -142,17 +142,18 @@ class Handler(BaseHandler):
                 page_link = 'http://dean.swjtu.edu.cn/servlet/NewsAction?Action=NewsMore&page={}'.format(
                     page)
                 if page < 5:
-                    self.crawl(page_link, callback=self.index_page)
+                    self.crawl(page_link, callback=self.index_page, last_modified=False)
 
     @config(priority=2)
     def dean_competition_detail_page(self, response):
         title= response.doc('font[size="5"]').text()
-        detail = response.doc('td[style="line-height: 150%"]').html()
+        detail = response.doc('td[style="line-height: 150%"]').text()
         publishdate = response.save['publishdate']
-        if datetime.strptime(publishdate , '%Y-%m-%d %H:%M:%S') >= limdate:
+        publishdate = datetime.strptime(publishdate , '%Y-%m-%d %H:%M:%S')
+        if publishdate >= limdate:
             return  {
                 "title": title,
-                "publishdate": datetime.strptime(publishdate, '%Y-%m-%d %H:%M:%S'),
+                "publishdate": publishdate.strftime('%Y-%m-%d'),
                 "detail": detail,
             }
 

@@ -4,13 +4,15 @@
 # Project: LecturePush
 
 from pyspider.libs.base_handler import *
-import re
+import  re
 from datetime import datetime
 from pyspider.libs.base_handler import *
 import pymysql
 
-conn = pymysql.connect(host='ip', user='root', passwd='password', db='db', charset="utf8")
+
+conn = pymysql.connect(host='ip', user='root', passwd='pass', db='db', charset="utf8")
 cursor = conn.cursor()
+
 
 class Handler(BaseHandler):
     crawl_config = {
@@ -44,9 +46,9 @@ class Handler(BaseHandler):
     def on_start(self):
         self.crawl(
             'http://www.swjtu.edu.cn/jsp/activity.jsp?page=1&siteId=12163&catalogPath=-12163-12259-&selectDay=&searchType=month&address=&keyword=&hdType=',
-            callback=self.swjtu_page, validate_cert=False, auto_recrawl=True)
+            callback=self.swjtu_page, validate_cert=False, auto_recrawl=True,last_modified=False)
         self.crawl('http://dean.swjtu.edu.cn/servlet/LectureAction?Action=LectureMore&SelectType=Month',
-                   callback=self.dean_page, validate_cert=False, auto_recrawl=True)
+                   callback=self.dean_page, validate_cert=False, auto_recrawl=True,last_modified=False)
 
     def swjtu_page(self, response):
         for each in response.doc('[cmsid="34403899"] a').items():
@@ -62,12 +64,12 @@ class Handler(BaseHandler):
         html = response.doc('script')
         lecture_pages = re.findall('var allPage = "(.*?)"', html.text(), re.S)[0]
         for each in response.doc('[style="float:left;width:735px;"] a').items():
-            self.crawl(each.attr.href, callback=self.dean_detail_page)
+            self.crawl(each.attr.href, callback=self.dean_detail_page,last_modified=False)
         if lecture_pages > 1:
             for item in range(2, int(lecture_pages) + 1):
                 lecture_page_link = 'http://dean.swjtu.edu.cn/servlet/LectureAction?Action=LectureMore&SelectType=Month&page={}'.format(
                     item)
-                self.crawl(lecture_page_link, callback=self.dean_page)
+                self.crawl(lecture_page_link, callback=self.dean_page,last_modified=False)
 
     def handleTime(self, text):
         text = text.split('---')[0]
@@ -99,7 +101,7 @@ class Handler(BaseHandler):
         time = response.doc(
             '[style="width:50px; height:80px; margin:10px auto; text-align:center; font-size:14px; font-weight:bold; line-height:23px; color:#6c6c6c;"]').text()
         time = self.handleTime(date + " " + time)
-        detail = response.doc('[style="width:700px; height:auto; margin:0 auto;"]').html()
+        detail = response.doc('[style="width:700px; height:auto; margin:0 auto;"]').text()
 
         deadtime = self.deadTime(datetime.now())
         if time >= deadtime:
@@ -120,7 +122,7 @@ class Handler(BaseHandler):
         time = datetime.now()
         place = ""
         speaker = ""
-        detail = response.doc('table#table1 tr td').html()
+       
         for each in response.doc('table#table1 tr td').items():
             if line == 0:
                 title = each.text()
@@ -131,8 +133,11 @@ class Handler(BaseHandler):
             if line == 5:
                 speaker = each.text()
             if line == 7:
-                speakerbrief = each.text()
+                speakerbrief = each.text() 
+            if line == 9:
+                detail = '嘉宾介绍:'.decode('utf8')+speakerbrief + '\n' + '演讲内容:'.decode('utf8')+each.text()
             line = line + 1
+        
         deadtime = self.deadTime(datetime.now())
         if time >= deadtime:
             return {
@@ -160,6 +165,7 @@ class Handler(BaseHandler):
             'INSERT INTO Lecture(title, lecturetime, place, speaker, speakerbrif, detail) VALUES (%s, %s, %s, %s, %s, %s)',
             (title, time, place, speaker, speakerbrif, detail))
             self.conn.commit()
+            #self.conn.commit()
             print('insert success!')
         else:
             print('data has already exists.')
